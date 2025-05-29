@@ -223,6 +223,21 @@ document.addEventListener('DOMContentLoaded', function() {
       updateResult();
     });
     
+    // From amount formatting on input (for live comma formatting)
+    document.getElementById('mnt-amount-from').addEventListener('input', function() {
+      // Only format if user paused typing (debounced)
+      clearTimeout(this.formatTimeout);
+      this.formatTimeout = setTimeout(() => {
+        const cursorPos = this.selectionStart;
+        const oldValue = this.value;
+        formatInputValue(this, 2);
+        // Restore cursor position after formatting
+        const newValue = this.value;
+        const diff = newValue.length - oldValue.length;
+        this.setSelectionRange(cursorPos + diff, cursorPos + diff);
+      }, 500);
+    });
+    
     // To amount change
     document.getElementById('mnt-amount-to').addEventListener('input', function() {
       const toAmount = parseNumberWithCommas(this.value);
@@ -241,17 +256,30 @@ document.addEventListener('DOMContentLoaded', function() {
       updateResult();
     });
     
+    // To amount formatting on input (for live comma formatting)
+    document.getElementById('mnt-amount-to').addEventListener('input', function() {
+      clearTimeout(this.formatTimeout);
+      this.formatTimeout = setTimeout(() => {
+        const cursorPos = this.selectionStart;
+        const oldValue = this.value;
+        formatInputValue(this, 2);
+        const newValue = this.value;
+        const diff = newValue.length - oldValue.length;
+        this.setSelectionRange(cursorPos + diff, cursorPos + diff);
+      }, 500);
+    });
+    
     // From currency change
     document.getElementById('mnt-currency-from').addEventListener('change', function() {
       const fromCurrency = this.value;
       const toCurrency = document.getElementById('mnt-currency-to').value;
       
-      // If neither currency is MNT, set the other one to MNT
-      if (fromCurrency !== 'MNT' && toCurrency !== 'MNT') {
-        document.getElementById('mnt-currency-to').value = 'MNT';
+      // If same currency or neither is MNT, fix it
+      if (fromCurrency === toCurrency || (fromCurrency !== 'MNT' && toCurrency !== 'MNT')) {
+        document.getElementById('mnt-currency-to').value = fromCurrency === 'MNT' ? 'USD' : 'MNT';
       }
       
-      document.getElementById('mnt-converter-input-symbol').textContent = getCurrencySymbol(fromCurrency);
+      document.getElementById('mnt-from-symbol').textContent = getCurrencySymbol(fromCurrency);
       updateResult();
     });
     
@@ -260,10 +288,10 @@ document.addEventListener('DOMContentLoaded', function() {
       const fromCurrency = document.getElementById('mnt-currency-from').value;
       const toCurrency = this.value;
       
-      // If neither currency is MNT, set the from currency to MNT
-      if (fromCurrency !== 'MNT' && toCurrency !== 'MNT') {
-        document.getElementById('mnt-currency-from').value = 'MNT';
-        document.getElementById('mnt-converter-input-symbol').textContent = getCurrencySymbol('MNT');
+      // If same currency or neither is MNT, fix it
+      if (fromCurrency === toCurrency || (fromCurrency !== 'MNT' && toCurrency !== 'MNT')) {
+        document.getElementById('mnt-currency-from').value = toCurrency === 'MNT' ? 'USD' : 'MNT';
+        document.getElementById('mnt-from-symbol').textContent = getCurrencySymbol(toCurrency === 'MNT' ? 'USD' : 'MNT');
       }
       
       updateResult();

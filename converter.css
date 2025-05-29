@@ -92,6 +92,17 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
+/* Hide number input spinners */
+.mnt-converter-input::-webkit-outer-spin-button,
+.mnt-converter-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.mnt-converter-input[type=number] {
+  -moz-appearance: textfield;
+}
+
 .mnt-converter-input-symbol {
   position: absolute;
   left: 0.75rem;
@@ -103,16 +114,24 @@
 
 .mnt-converter-select {
   position: absolute;
-  right: 0.5rem;
-  top: 50%;
-  transform: translateY(-50%);
-  padding: 0.25rem 0.5rem;
+  right: 0.25rem;
+  top: 0;
+  bottom: 0;
+  width: 4rem;
+  padding: 0 0.5rem;
   border: none;
   background-color: transparent;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1rem 1rem;
   color: #6b7280;
   font-size: 0.875rem;
+  font-weight: 500;
   appearance: none;
   cursor: pointer;
+  text-align: right;
+  padding-right: 2rem;
 }
 
 .mnt-converter-swap-button {
@@ -130,6 +149,17 @@
 
 .mnt-converter-swap-button:hover {
   background-color: #bae6fd;
+}
+
+.mnt-converter-warning {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  text-align: center;
 }
 
 .mnt-converter-results {

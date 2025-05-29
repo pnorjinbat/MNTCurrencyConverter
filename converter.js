@@ -1,58 +1,64 @@
-// MNT Currency Converter for Webflow
-document.addEventListener('DOMContentLoaded', function() {
-  // Currency data
+// MNT Currency Converter
+(function() {
+  'use strict';
+
+  // Sample exchange rates (to be replaced with real API data)
   const currencies = {
-    MNT: { code: "MNT", name: "Mongolian Tugrik", symbol: "₮", rate: 1 },
-    USD: { code: "USD", name: "US Dollar", symbol: "$", rate: 0.00029 },
-    EUR: { code: "EUR", name: "Euro", symbol: "€", rate: 0.00026 },
-    CNY: { code: "Chinese Yuan", name: "Chinese Yuan", symbol: "¥", rate: 0.0021 },
-    RUB: { code: "RUB", name: "Russian Ruble", symbol: "₽", rate: 0.026 },
-    JPY: { code: "JPY", name: "Japanese Yen", symbol: "¥", rate: 0.041 },
-    GBP: { code: "GBP", name: "British Pound", symbol: "£", rate: 0.00022 }
+    "MNT": { code: "MNT", name: "Mongolian Tugrik", symbol: "₮", rate: 1 },
+    "USD": { code: "USD", name: "US Dollar", symbol: "$", rate: 0.00029 },
+    "EUR": { code: "EUR", name: "Euro", symbol: "€", rate: 0.00027 },
+    "GBP": { code: "GBP", name: "British Pound", symbol: "£", rate: 0.00023 },
+    "JPY": { code: "JPY", name: "Japanese Yen", symbol: "¥", rate: 0.044 },
+    "CNY": { code: "CNY", name: "Chinese Yuan", symbol: "¥", rate: 0.0021 },
+    "KRW": { code: "KRW", name: "South Korean Won", symbol: "₩", rate: 0.39 },
+    "RUB": { code: "RUB", name: "Russian Ruble", symbol: "₽", rate: 0.029 },
+    "CAD": { code: "CAD", name: "Canadian Dollar", symbol: "C$", rate: 0.00041 },
+    "AUD": { code: "AUD", name: "Australian Dollar", symbol: "A$", rate: 0.00045 }
   };
 
-  // Init converter
+  // Initialize the converter
   function initConverter() {
-    // Find container
     const container = document.getElementById('mnt-currency-converter');
     if (!container) return;
 
-    // Set last updated date
-    const lastUpdated = new Date().toLocaleString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }) + ' MNT';
+    container.innerHTML = createConverterHTML();
+    setupEventListeners();
+    updateResult();
+  }
 
-    // Render converter HTML
-    container.innerHTML = `
+  // Create the HTML structure
+  function createConverterHTML() {
+    return `
       <div class="mnt-converter">
         <div class="mnt-converter-header">
           <div class="mnt-converter-header-top">
-            <h1 class="mnt-converter-title">MNT Currency Converter</h1>
-            <span>Bank of Mongolia Rates</span>
-          </div>
-          <p class="mnt-converter-subtitle">Convert between Mongolian Tugrik (MNT) and major currencies</p>
-          <div class="mnt-converter-last-updated">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mnt-refresh-icon">
-              <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
-              <path d="M21 3v5h-5"></path>
-              <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
-              <path d="M3 21v-5h5"></path>
-            </svg>
-            Last updated: ${lastUpdated}
+            <div>
+              <h1 class="mnt-converter-title">MNT Currency Converter</h1>
+              <p class="mnt-converter-subtitle">Convert Mongolian Tugrik to other currencies</p>
+            </div>
+            <div class="mnt-converter-flag">
+              <svg width="32" height="24" viewBox="0 0 32 24" xmlns="http://www.w3.org/2000/svg">
+                <rect width="32" height="24" fill="#CE1126"/>
+                <rect x="10.67" width="10.67" height="24" fill="#0066CC"/>
+                <rect x="21.33" width="10.67" height="24" fill="#CE1126"/>
+                <g fill="#FFD700">
+                  <circle cx="5.33" cy="6" r="1"/>
+                  <circle cx="5.33" cy="12" r="1"/>
+                  <circle cx="5.33" cy="18" r="1"/>
+                  <rect x="4.5" y="8.5" width="1.67" height="7" rx="0.2"/>
+                </g>
+              </svg>
+            </div>
           </div>
         </div>
-        
+
         <div class="mnt-converter-body">
           <div class="mnt-converter-form">
-            <label class="mnt-converter-form-label">From</label>
+            <label class="mnt-converter-form-label">Amount to Convert</label>
             <div class="mnt-converter-input-group">
               <div class="mnt-converter-input-wrapper">
-                <span class="mnt-converter-input-symbol">₮</span>
-                <input type="number" class="mnt-converter-input" id="mnt-amount-from" value="1000">
+                <span class="mnt-converter-input-symbol" id="mnt-from-symbol">₮</span>
+                <input type="number" class="mnt-converter-input" id="mnt-amount-from" value="1000" placeholder="0">
                 <select class="mnt-converter-select" id="mnt-currency-from">
                   ${Object.keys(currencies).map(code => 
                     `<option value="${code}" ${code === 'MNT' ? 'selected' : ''}>${code}</option>`
@@ -71,7 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
               
               <div class="mnt-converter-input-wrapper">
                 <span class="mnt-converter-input-symbol" id="mnt-to-symbol">$</span>
-                <input type="number" class="mnt-converter-input" id="mnt-amount-to" value="0.29">
+                <input type="number" class="mnt-converter-input" id="mnt-amount-to" value="0.29" placeholder="0">
                 <select class="mnt-converter-select" id="mnt-currency-to">
                   ${Object.keys(currencies).map(code => 
                     `<option value="${code}" ${code === 'USD' ? 'selected' : ''}>${code}</option>`
@@ -81,62 +87,50 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
           </div>
           
-          <div class="mnt-converter-warning" id="mnt-warning" style="display: none;">
+          <div class="mnt-converter-warning" id="mnt-warning">
             Please select MNT as one of the currencies for conversion.
           </div>
           
-          <div class="mnt-converter-results">
+          <div class="mnt-converter-results" id="mnt-results">
             <h2 class="mnt-converter-results-title">Conversion Result</h2>
             <div class="mnt-converter-result-row">
               <span id="mnt-result-from">1,000 MNT</span>
-              <span class="font-bold">=</span>
+              <span style="font-weight: bold">=</span>
               <span class="mnt-converter-result-amount" id="mnt-result-to">0.29 USD</span>
             </div>
             <div class="mnt-converter-result-row">
               <span>Exchange Rate:</span>
-              <span class="mnt-converter-result-rate" id="mnt-result-rate">1 MNT = 0.00029 USD</span>
+              <span class="mnt-converter-result-rate" id="mnt-result-rate">1 MNT = 0.000290 USD</span>
             </div>
           </div>
-          
+
           <div class="mnt-converter-currencies">
             <h2 class="mnt-converter-currencies-title">Popular Currencies</h2>
             <div class="mnt-converter-currencies-grid">
-              ${['USD', 'EUR', 'CNY', 'RUB', 'JPY', 'GBP'].map(code => `
+              ${Object.entries(currencies).filter(([code]) => code !== 'MNT').slice(0, 6).map(([code, currency]) => `
                 <div class="mnt-converter-currency-card" data-currency="${code}">
-                  <div class="mnt-converter-currency-card-content">
-                    <div class="mnt-converter-currency-flag mnt-bg-${code.toLowerCase()}">
-                      <div class="mnt-converter-currency-code ${code === 'JPY' ? 'mnt-text-red' : code === 'RUB' ? 'mnt-text-blue' : 'mnt-text-white'}">${code}</div>
-                    </div>
-                    <div class="mnt-converter-currency-info">
-                      <div class="mnt-converter-currency-name">${currencies[code].name}</div>
-                      <div class="mnt-converter-currency-rate">₮1 = ${currencies[code].rate.toFixed(6)}</div>
-                    </div>
-                  </div>
+                  <div class="mnt-converter-currency-code">${code}</div>
+                  <div class="mnt-converter-currency-name">${currency.name}</div>
+                  <div class="mnt-converter-currency-rate">1 MNT = ${formatNumber(currency.rate, 6)} ${code}</div>
                 </div>
               `).join('')}
             </div>
           </div>
-        </div>
-        
-        <div class="mnt-converter-footer">
-          <div class="mnt-converter-footer-info">
-            <p>Data provided by the Bank of Mongolia</p>
+
+          <div class="mnt-converter-refresh">
+            <button class="mnt-converter-refresh-button" id="mnt-refresh-button">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+                <path d="M21 3v5h-5"></path>
+                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+                <path d="M3 21v-5h5"></path>
+              </svg>
+              Refresh Rates
+            </button>
           </div>
-          <button class="mnt-converter-refresh-button" id="mnt-refresh-button">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mnt-refresh-icon">
-              <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
-              <path d="M21 3v5h-5"></path>
-              <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
-              <path d="M3 21v-5h5"></path>
-            </svg>
-            Refresh Rates
-          </button>
         </div>
       </div>
     `;
-
-    // Add event listeners
-    setupEventListeners();
   }
 
   // Helper functions
@@ -148,18 +142,22 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function parseNumberWithCommas(value) {
-    return parseFloat(value.replace(/,/g, '')) || 0;
+    return parseFloat(String(value).replace(/,/g, '')) || 0;
   }
 
   function formatInputValue(input, decimals = 2) {
     const value = parseNumberWithCommas(input.value);
-    if (!isNaN(value)) {
+    if (!isNaN(value) && value >= 0) {
       input.value = formatNumber(value, decimals);
     }
   }
 
   function getCurrencySymbol(code) {
     return currencies[code]?.symbol || '';
+  }
+
+  function getCurrencyName(code) {
+    return currencies[code]?.name || '';
   }
 
   // Convert currency
@@ -173,16 +171,16 @@ document.addEventListener('DOMContentLoaded', function() {
     return toCurrency === "MNT" ? amountInMNT : amountInMNT * currencies[toCurrency].rate;
   }
 
-  // Update conversion result
+  // Update conversion result with smart validation
   function updateResult() {
-    const fromAmount = parseNumberWithCommas(document.getElementById('mnt-amount-from').value);
+    const fromAmount = parseNumberWithCommas(document.getElementById('mnt-amount-from').value) || 0;
     const fromCurrency = document.getElementById('mnt-currency-from').value;
     const toCurrency = document.getElementById('mnt-currency-to').value;
     
     const warningElement = document.getElementById('mnt-warning');
-    const resultsElement = document.querySelector('.mnt-converter-results');
+    const resultsElement = document.getElementById('mnt-results');
     
-    // Check if at least one currency is MNT and they're not the same
+    // Smart validation: at least one currency must be MNT and they can't be the same
     if (fromCurrency === toCurrency || (fromCurrency !== 'MNT' && toCurrency !== 'MNT')) {
       warningElement.style.display = 'block';
       resultsElement.style.display = 'none';
@@ -206,7 +204,8 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('mnt-result-rate').textContent = 
       `1 ${fromCurrency} = ${formatNumber(rate, 6)} ${toCurrency}`;
     
-    // Update to currency symbol
+    // Update currency symbols
+    document.getElementById('mnt-from-symbol').textContent = getCurrencySymbol(fromCurrency);
     document.getElementById('mnt-to-symbol').textContent = getCurrencySymbol(toCurrency);
   }
 
@@ -221,21 +220,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('mnt-amount-from').addEventListener('blur', function() {
       formatInputValue(this, 2);
       updateResult();
-    });
-    
-    // From amount formatting on input (for live comma formatting)
-    document.getElementById('mnt-amount-from').addEventListener('input', function() {
-      // Only format if user paused typing (debounced)
-      clearTimeout(this.formatTimeout);
-      this.formatTimeout = setTimeout(() => {
-        const cursorPos = this.selectionStart;
-        const oldValue = this.value;
-        formatInputValue(this, 2);
-        // Restore cursor position after formatting
-        const newValue = this.value;
-        const diff = newValue.length - oldValue.length;
-        this.setSelectionRange(cursorPos + diff, cursorPos + diff);
-      }, 500);
     });
     
     // To amount change
@@ -256,48 +240,33 @@ document.addEventListener('DOMContentLoaded', function() {
       updateResult();
     });
     
-    // To amount formatting on input (for live comma formatting)
-    document.getElementById('mnt-amount-to').addEventListener('input', function() {
-      clearTimeout(this.formatTimeout);
-      this.formatTimeout = setTimeout(() => {
-        const cursorPos = this.selectionStart;
-        const oldValue = this.value;
-        formatInputValue(this, 2);
-        const newValue = this.value;
-        const diff = newValue.length - oldValue.length;
-        this.setSelectionRange(cursorPos + diff, cursorPos + diff);
-      }, 500);
-    });
-    
-    // From currency change
+    // From currency change with smart validation
     document.getElementById('mnt-currency-from').addEventListener('change', function() {
       const fromCurrency = this.value;
       const toCurrency = document.getElementById('mnt-currency-to').value;
       
-      // If same currency or neither is MNT, fix it
+      // Smart correction: if same currency or neither is MNT, fix it
       if (fromCurrency === toCurrency || (fromCurrency !== 'MNT' && toCurrency !== 'MNT')) {
         document.getElementById('mnt-currency-to').value = fromCurrency === 'MNT' ? 'USD' : 'MNT';
       }
       
-      document.getElementById('mnt-from-symbol').textContent = getCurrencySymbol(fromCurrency);
       updateResult();
     });
     
-    // To currency change
+    // To currency change with smart validation
     document.getElementById('mnt-currency-to').addEventListener('change', function() {
       const fromCurrency = document.getElementById('mnt-currency-from').value;
       const toCurrency = this.value;
       
-      // If same currency or neither is MNT, fix it
+      // Smart correction: if same currency or neither is MNT, fix it
       if (fromCurrency === toCurrency || (fromCurrency !== 'MNT' && toCurrency !== 'MNT')) {
         document.getElementById('mnt-currency-from').value = toCurrency === 'MNT' ? 'USD' : 'MNT';
-        document.getElementById('mnt-from-symbol').textContent = getCurrencySymbol(toCurrency === 'MNT' ? 'USD' : 'MNT');
       }
       
       updateResult();
     });
     
-    // Swap currencies
+    // Swap currencies button
     document.getElementById('mnt-swap-button').addEventListener('click', function() {
       const fromCurrency = document.getElementById('mnt-currency-from');
       const toCurrency = document.getElementById('mnt-currency-to');
@@ -306,65 +275,43 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // Swap values
       const tempCurrency = fromCurrency.value;
+      const tempAmount = fromAmount.value;
+      
       fromCurrency.value = toCurrency.value;
       toCurrency.value = tempCurrency;
-      
-      const tempAmount = fromAmount.value;
       fromAmount.value = toAmount.value;
-      toAmount.value = tempAmount;
       
       updateResult();
     });
     
-    // Currency card selection
+    // Currency card clicks
     document.querySelectorAll('.mnt-converter-currency-card').forEach(card => {
       card.addEventListener('click', function() {
         const currency = this.dataset.currency;
-        document.getElementById('mnt-currency-to').value = currency;
+        const fromCurrency = document.getElementById('mnt-currency-from').value;
+        
+        if (fromCurrency === 'MNT') {
+          document.getElementById('mnt-currency-to').value = currency;
+        } else {
+          document.getElementById('mnt-currency-from').value = currency;
+        }
+        
         updateResult();
       });
     });
     
-    // Refresh button (simulates refresh)
+    // Refresh button
     document.getElementById('mnt-refresh-button').addEventListener('click', function() {
-      const button = this;
-      const icon = button.querySelector('.mnt-refresh-icon');
-      
-      // Add spinning animation
-      icon.classList.add('mnt-animate-spin');
-      button.disabled = true;
-      
-      // Simulate refresh after 1 second
-      setTimeout(() => {
-        // Update last updated time
-        const lastUpdated = new Date().toLocaleString('en-US', {
-          month: 'long',
-          day: 'numeric',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        }) + ' MNT';
-        
-        document.querySelector('.mnt-converter-last-updated').innerHTML = `
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mnt-refresh-icon">
-            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
-            <path d="M21 3v5h-5"></path>
-            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
-            <path d="M3 21v-5h5"></path>
-          </svg>
-          Last updated: ${lastUpdated}
-        `;
-        
-        // Stop animation
-        icon.classList.remove('mnt-animate-spin');
-        button.disabled = false;
-        
-        // Update results
-        updateResult();
-      }, 1000);
+      // In a real implementation, this would fetch new rates from API
+      updateResult();
     });
   }
 
-  // Initialize the converter
-  initConverter();
-});
+  // Initialize when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initConverter);
+  } else {
+    initConverter();
+  }
+
+})();

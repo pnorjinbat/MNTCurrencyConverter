@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MNT Currency Converter - Iframe Example</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background-color: #f3f4f6;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    .iframe-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    h1 {
+      text-align: center;
+      color: #1f2937;
+      margin-bottom: 20px;
+    }
+    
+    iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+      border-radius: 8px;
+    }
+    
+    .webflow-code {
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 4px;
+      padding: 15px;
+      margin-top: 20px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="iframe-container">
+    <h1>MNT Currency Converter - Iframe Embed</h1>
+    
+    <!-- Your React app iframe -->
+    <iframe 
+      src="./index.html" 
+      title="MNT Currency Converter"
+      allowfullscreen>
+    </iframe>
+    
+    <div class="webflow-code">
+      <strong>For Webflow:</strong><br>
+      Copy this code into an HTML Embed element:<br><br>
+      &lt;iframe <br>
+      &nbsp;&nbsp;src="https://YOUR-USERNAME.github.io/YOUR-REPO-NAME/index.html" <br>
+      &nbsp;&nbsp;width="100%" <br>
+      &nbsp;&nbsp;height="600" <br>
+      &nbsp;&nbsp;style="border: none; border-radius: 8px;"<br>
+      &nbsp;&nbsp;title="MNT Currency Converter"&gt;<br>
+      &lt;/iframe&gt;
+    </div>
+  </div>
+</body>
+</html>

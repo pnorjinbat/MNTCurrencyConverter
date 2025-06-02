@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MNT Currency Converter</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@tanstack/react-query@5/build/umd/index.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link rel="stylesheet" crossorigin href="./index-BsGp0P3J.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f3f4f6;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+    const { QueryClient, QueryClientProvider, useQuery } = window.ReactQuery;
+
+    const queryClient = new QueryClient();
+
+    // ExchangeRate-API key for real exchange rates
+    const API_KEY = '9a77c39627157b8a8834eca7';
+
+    function CurrencyConverter() {
+      const [fromAmount, setFromAmount] = useState('1000');
+      const [toAmount, setToAmount] = useState('0.29');
+      const [fromCurrency, setFromCurrency] = useState('MNT');
+      const [toCurrency, setToCurrency] = useState('USD');
+      const [warning, setWarning] = useState(false);
+
+      // Fetch exchange rates from ExchangeRate-API
+      const { data: ratesData, isLoading } = useQuery({
+        queryKey: ['exchange-rates'],
+        queryFn: async () => {
+          const response = await fetch(`https://v6.exchangerate-api.com/v6/${API_KEY}/latest/MNT`);
+          if (!response.ok) throw new Error('Failed to fetch rates');
+          return response.json();
+        },
+        staleTime: 1000 * 60 * 5, // 5 minutes
+      });
+
+      const rates = ratesData?.conversion_rates || {};
+
+      // Currency data
+      const currencySymbols = {
+        MNT: '₮', USD: '$', EUR: '€', GBP: '£', JPY: '¥',
+        CNY: '¥', KRW: '₩', RUB: '₽', CAD: 'C$', AUD: 'A$'
+      };
+
+      const currencyNames = {
+        MNT: 'Mongolian Tugrik', USD: 'US Dollar', EUR: 'Euro',
+        GBP: 'British Pound', JPY: 'Japanese Yen', CNY: 'Chinese Yuan',
+        KRW: 'South Korean Won', RUB: 'Russian Ruble',
+        CAD: 'Canadian Dollar', AUD: 'Australian Dollar'
+      };
+
+      // Smart currency validation and auto-correction
+      useEffect(() => {
+        if (fromCurrency === toCurrency) {
+          // If same currency selected, change the other one
+          if (fromCurrency === 'MNT') {
+            setToCurrency('USD');
+          } else {
+            setFromCurrency('MNT');
+          }
+        } else if (fromCurrency !== 'MNT' && toCurrency !== 'MNT') {
+          // If neither is MNT, set one to MNT
+          setToCurrency('MNT');
+        }
+      }, [fromCurrency, toCurrency]);
+
+      // Conversion logic
+      useEffect(() => {
+        if (fromCurrency === toCurrency || (fromCurrency !== 'MNT' && toCurrency !== 'MNT')) {
+          setWarning(true);
+          return;
+        }
+        setWarning(false);
+
+        if (rates[toCurrency] && fromAmount) {
+          const amount = parseFloat(fromAmount.replace(/,/g, '')) || 0;
+          const result = fromCurrency === 'MNT' 
+            ? amount * rates[toCurrency]
+            : amount / rates[fromCurrency];
+          setToAmount(formatNumber(result));
+        }
+      }, [fromAmount, fromCurrency, toCurrency, rates]);
+
+      const formatNumber = (num) => {
+        return parseFloat(num).toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+      };
+
+      if (isLoading) {
+        return React.createElement('div', { 
+          style: { padding: '20px', textAlign: 'center' } 
+        }, 'Loading exchange rates...');
+      }
+
+      if (API_KEY === 'YOUR_EXCHANGERATE_API_KEY_HERE') {
+        return React.createElement('div', { 
+          style: { 
+            padding: '20px', 
+            textAlign: 'center',
+            backgroundColor: '#fef2f2',
+            border: '1px solid #fecaca',
+            borderRadius: '8px',
+            margin: '20px',
+            color: '#dc2626'
+          } 
+        }, 'Please provide your ExchangeRate-API key to use real exchange rates.');
+      }
+
+      return React.createElement('div', { 
+        className: 'bg-gray-100 min-h-screen font-sans text-gray-800 p-4' 
+      }, 
+        React.createElement('div', { 
+          className: 'max-w-4xl mx-auto bg-white rounded-lg shadow-lg' 
+        },
+          // Header
+          React.createElement('div', { 
+            className: 'bg-blue-700 text-white p-6 rounded-t-lg' 
+          },
+            React.createElement('h1', { 
+              className: 'text-2xl font-bold' 
+            }, 'MNT Currency Converter'),
+            React.createElement('p', { 
+              className: 'text-blue-200 text-sm mt-2' 
+            }, 'Convert Mongolian Tugrik to other currencies')
+          ),
+          
+          // Body
+          React.createElement('div', { className: 'p-6' },
+            // Warning
+            warning && React.createElement('div', {
+              className: 'bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 text-center'
+            }, 'Please select MNT as one of the currencies for conversion.'),
+            
+            // Input fields
+            React.createElement('div', { 
+              className: 'flex flex-col md:flex-row gap-4 items-center mb-6' 
+            },
+              // From field
+              React.createElement('div', { className: 'flex-1 relative' },
+                React.createElement('span', {
+                  className: 'absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500'
+                }, currencySymbols[fromCurrency]),
+                React.createElement('input', {
+                  type: 'text',
+                  value: fromAmount,
+                  onChange: (e) => setFromAmount(e.target.value),
+                  onBlur: (e) => {
+                    const num = parseFloat(e.target.value.replace(/,/g, ''));
+                    if (!isNaN(num)) {
+                      setFromAmount(formatNumber(num));
+                    }
+                  },
+                  className: 'w-full pl-8 pr-16 py-3 border border-gray-300 rounded focus:outline-none focus:border-blue-500',
+                  placeholder: '0'
+                }),
+                React.createElement('select', {
+                  value: fromCurrency,
+                  onChange: (e) => setFromCurrency(e.target.value),
+                  className: 'absolute right-1 top-1 bottom-1 w-16 bg-transparent border-none text-sm focus:outline-none'
+                }, Object.keys(currencyNames).map(code =>
+                  React.createElement('option', { key: code, value: code }, code)
+                ))
+              ),
+              
+              // Swap button
+              React.createElement('button', {
+                onClick: () => {
+                  setFromCurrency(toCurrency);
+                  setToCurrency(fromCurrency);
+                  setFromAmount(toAmount);
+                },
+                className: 'w-10 h-10 bg-blue-100 hover:bg-blue-200 rounded-full flex items-center justify-center text-blue-700'
+              }, '⇄'),
+              
+              // To field
+              React.createElement('div', { className: 'flex-1 relative' },
+                React.createElement('span', {
+                  className: 'absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500'
+                }, currencySymbols[toCurrency]),
+                React.createElement('input', {
+                  type: 'text',
+                  value: toAmount,
+                  readOnly: true,
+                  className: 'w-full pl-8 pr-16 py-3 border border-gray-300 rounded bg-gray-50',
+                  placeholder: '0'
+                }),
+                React.createElement('select', {
+                  value: toCurrency,
+                  onChange: (e) => setToCurrency(e.target.value),
+                  className: 'absolute right-1 top-1 bottom-1 w-16 bg-transparent border-none text-sm focus:outline-none'
+                }, Object.keys(currencyNames).map(code =>
+                  React.createElement('option', { key: code, value: code }, code)
+                ))
+              )
+            ),
+            
+            // Result display
+            !warning && React.createElement('div', {
+              className: 'bg-gray-50 p-4 rounded border'
+            },
+              React.createElement('h3', { className: 'font-semibold mb-2' }, 'Conversion Result'),
+              React.createElement('div', { className: 'flex justify-between' },
+                React.createElement('span', null, `${formatNumber(fromAmount)} ${fromCurrency}`),
+                React.createElement('span', { className: 'font-bold' }, '='),
+                React.createElement('span', { className: 'text-green-600 font-semibold' }, `${formatNumber(toAmount)} ${toCurrency}`)
+              )
+            )
+          )
+        )
+      );
+    }
+
+    function App() {
+      return React.createElement(QueryClientProvider, { client: queryClient },
+        React.createElement(CurrencyConverter)
+      );
+    }
+
+    ReactDOM.render(React.createElement(App), document.getElementById('root'));
+  </script>
+</body>
+</html>

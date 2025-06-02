@@ -208,7 +208,7 @@
             <span class="currency-symbol" id="from-symbol">₮</span>
             <input type="text" class="amount-input" id="from-amount" value="1,000" placeholder="0">
             <select class="currency-select" id="from-currency">
-              <option value="MNT">MNT</option>
+              <option value="MNT" selected>MNT</option>
               <option value="USD">USD</option>
               <option value="EUR">EUR</option>
               <option value="GBP">GBP</option>
@@ -232,7 +232,7 @@
 
           <div class="input-wrapper">
             <span class="currency-symbol" id="to-symbol">$</span>
-            <input type="text" class="amount-input" id="to-amount" value="0.29" readonly>
+            <input type="text" class="amount-input" id="to-amount" value="0.29" placeholder="0">
             <select class="currency-select" id="to-currency">
               <option value="MNT">MNT</option>
               <option value="USD" selected>USD</option>
@@ -357,22 +357,39 @@
     function updateConversion() {
       if (!validateCurrencies()) return;
 
-      const fromAmount = parseNumber(elements.fromAmount.value);
+      const fromAmount = parseNumber(elements.fromAmount.value || elements.toAmount.value);
       const fromCurrency = elements.fromCurrency.value;
       const toCurrency = elements.toCurrency.value;
 
-      // Convert currency
       let result;
-      if (fromCurrency === 'MNT') {
-        result = fromAmount * exchangeRates[toCurrency];
+      let sourceAmount = fromAmount;
+      let targetAmount;
+
+      // Determine which field has input
+      if (document.activeElement === elements.toAmount || elements.fromAmount.value === '') {
+        // Converting from target currency to MNT/base currency
+        sourceAmount = parseNumber(elements.toAmount.value);
+        if (toCurrency === 'MNT') {
+          result = sourceAmount * exchangeRates[fromCurrency];
+        } else {
+          result = sourceAmount / exchangeRates[toCurrency];
+        }
+        elements.fromAmount.value = formatNumber(result);
+        targetAmount = sourceAmount;
       } else {
-        result = fromAmount / exchangeRates[fromCurrency];
+        // Converting from base currency to target
+        if (fromCurrency === 'MNT') {
+          result = fromAmount * exchangeRates[toCurrency];
+        } else {
+          result = fromAmount / exchangeRates[fromCurrency];
+        }
+        elements.toAmount.value = formatNumber(result);
+        targetAmount = result;
       }
 
-      // Update display
-      elements.toAmount.value = formatNumber(result);
-      elements.resultFrom.textContent = `${formatNumber(fromAmount, 0)} ${fromCurrency}`;
-      elements.resultTo.textContent = `${formatNumber(result)} ${toCurrency}`;
+      // Update result display
+      elements.resultFrom.textContent = `${formatNumber(parseNumber(elements.fromAmount.value), 0)} ${fromCurrency}`;
+      elements.resultTo.textContent = `${formatNumber(parseNumber(elements.toAmount.value))} ${toCurrency}`;
 
       // Update exchange rate
       const rate = fromCurrency === 'MNT' 
@@ -391,8 +408,14 @@
       const to = elements.toCurrency.value;
 
       if (from === to) {
-        elements.toCurrency.value = from === 'MNT' ? 'USD' : 'MNT';
+        // If same currency selected, change the other one
+        if (from === 'MNT') {
+          elements.toCurrency.value = 'USD';
+        } else {
+          elements.fromCurrency.value = 'MNT';
+        }
       } else if (from !== 'MNT' && to !== 'MNT') {
+        // If neither is MNT, force one to be MNT
         elements.toCurrency.value = 'MNT';
       }
     }
@@ -400,6 +423,15 @@
     // Event listeners
     elements.fromAmount.addEventListener('input', updateConversion);
     elements.fromAmount.addEventListener('blur', function() {
+      const num = parseNumber(this.value);
+      if (!isNaN(num)) {
+        this.value = formatNumber(num);
+        updateConversion();
+      }
+    });
+
+    elements.toAmount.addEventListener('input', updateConversion);
+    elements.toAmount.addEventListener('blur', function() {
       const num = parseNumber(this.value);
       if (!isNaN(num)) {
         this.value = formatNumber(num);
@@ -418,6 +450,7 @@
     });
 
     elements.swapBtn.addEventListener('click', function() {
+      // Swap currencies and amounts
       const fromCurrency = elements.fromCurrency.value;
       const toCurrency = elements.toCurrency.value;
       const fromAmount = elements.fromAmount.value;
@@ -426,6 +459,7 @@
       elements.fromCurrency.value = toCurrency;
       elements.toCurrency.value = fromCurrency;
       elements.fromAmount.value = toAmount;
+      elements.toAmount.value = fromAmount;
 
       updateConversion();
     });
